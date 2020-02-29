@@ -1,0 +1,29 @@
+/**
+ * Created as part of Osmosis 2020.
+ */
+package com.bangalorewest.bagtracker.repository;
+
+import java.util.Date;
+import java.util.List;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import com.bangalorewest.bagtracker.model.Booking;
+
+/**
+ * 
+ * BookingRepository.java Created On: Feb 24, 2020 Created By: M1026329
+ */
+public interface BookingRepository extends JpaRepository<Booking, Integer> {
+
+	List<Booking> findAllByDateOfFirstSegment(Date dateOfFirstSegment);
+
+	@Modifying
+	@Query(value = "update BOOKING_INFORMATION set BAG_TAG_IDS = :bagTagIDs where EMAIL_ID=:email AND FIRST_NAME=:fname", nativeQuery = true)
+	Integer updateGeneratedBagTagsToBookings(@Param("bagTagIDs") String bagTagIDs, @Param("email") String email,
+			@Param("fname") String firstName);
+
+}
