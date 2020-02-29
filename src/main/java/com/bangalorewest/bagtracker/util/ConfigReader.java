@@ -17,6 +17,7 @@ public class ConfigReader {
 	private static String statusApiUrl;
 	private static String baseUrl;
 	private static String loginUrl;
+	private static String postBsm;
 
 
 	/**
@@ -73,6 +74,20 @@ public class ConfigReader {
 	 */
 	public void setLoginUrl(String loginUrl) {
 		ConfigReader.loginUrl = loginUrl;
+	}
+
+	/**
+	 * @return the postBsm
+	 */
+	public static String getPostBsm() {
+		return postBsm;
+	}
+
+	/**
+	 * @param postBsm the postBsm to set
+	 */
+	public void setPostBsm(String postBsm) {
+		ConfigReader.postBsm = postBsm;
 	}
 
 }

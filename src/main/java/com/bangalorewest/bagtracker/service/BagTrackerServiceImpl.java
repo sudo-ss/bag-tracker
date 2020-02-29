@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -24,6 +25,7 @@ import com.bangalorewest.bagtracker.dto.BagHistoryFromBlockchain;
 import com.bangalorewest.bagtracker.dto.BagStatusResponse;
 import com.bangalorewest.bagtracker.dto.ConfirmLoginStatusDTO;
 import com.bangalorewest.bagtracker.dto.ConfirmMessageGeneration;
+import com.bangalorewest.bagtracker.dto.ConfirmSave;
 import com.bangalorewest.bagtracker.dto.LoadUnloadBag;
 import com.bangalorewest.bagtracker.dto.LoginDTO;
 import com.bangalorewest.bagtracker.dto.PaxItinerary;
@@ -57,17 +59,14 @@ public class BagTrackerServiceImpl implements BagTrackerService {
 	@Override
 	public BagStatusResponse fetchLatestBagStatus(String bagTagID, String dateOfTravel) {
 		// TODO Auto-generated method stub
-		String bearerToken = LoginHelper.issueBlockChainSecurityToken();
-		HttpHeaders headers = new HttpHeaders();
-		headers.add("Authorization", "Bearer " + bearerToken);
+		HttpHeaders headers = issueSecurityTokenAndSetHeaders();
 		String URL = ConfigReader.getBaseUrl().concat(ConfigReader.getStatusApiUrl()).concat(bagTagID).concat("&")
 				.concat("messageDate=").concat(dateOfTravel);
 		HttpEntity<String> entity = new HttpEntity<>("body", headers);
 		ResponseEntity<BagHistoriesFromBlockchain> resp = restTemplate.exchange(URL, HttpMethod.GET, entity,
 				BagHistoriesFromBlockchain.class);
-		System.out.println(resp);
 		BagStatusResponse bagStatus = createResponse(resp.getBody());
-		return null;
+		return bagStatus;
 	}
 
 	private BagStatusResponse createResponse(BagHistoriesFromBlockchain bagHistoriesFromBlockchain) {
@@ -78,8 +77,8 @@ public class BagTrackerServiceImpl implements BagTrackerService {
 		response.setDate(bagHistoryFromBlockchain.getMessageDate());
 		response.setStatus(findBagStatus(bagHistoryFromBlockchain));
 		response.setFlight(findFlight(bagHistoryFromBlockchain));
-		if(bagHistoryFromBlockchain.getMessage().contains("")) {
-			
+		if (bagHistoryFromBlockchain.getMessage().contains("")) {
+
 		}
 		return null;
 	}
@@ -115,15 +114,23 @@ public class BagTrackerServiceImpl implements BagTrackerService {
 	@Override
 	public ConfirmMessageGeneration generateBSM(PaxItinerary paxItinerary) throws BagTagUpdateFailedException {
 		String bsmMessage = msgBuilder.buildBSM(paxItinerary);
-
+		String URL = ConfigReader.getBaseUrl().concat(ConfigReader.getPostBsm());
+		HttpHeaders headers = issueSecurityTokenAndSetHeaders();
 		if (paxItinerary.getNumberOfCheckedInBags() > 1) {
 			for (String bagTagID : paxItinerary.getListOfGeneratedBagTags()) {
 				BagEvent bagEvent = new BagEvent();
 				bagEvent.setBagTagID(bagTagID);
 				bagEvent.setBagDate(paxItinerary.getDateOfTravel());
 				bagEvent.setFrom(paxItinerary.getLoggedInAgent());
-				bagEvent.setMessage(bsmMessage);
+				bagEvent.setMessage(bsmMessage.replaceAll(System.lineSeparator(), "||"));
 				// persist each bagEvent to Blockchain
+
+				String requestJSON = "{\"bagTagID\" : \"" + bagEvent.getBagTagID() + "\", \"from\" : \""
+						+ paxItinerary.getLoggedInAgent() + "\", \"messageDate\" : \"" + bagEvent.getBagDate()
+						+ "\", \"message\" : \"" + bagEvent.getMessage() + "\"}";
+				System.out.println(requestJSON);
+				HttpEntity<String> request = new HttpEntity<String>(requestJSON, headers);
+				ResponseEntity<ConfirmSave> postForEntity = restTemplate.postForEntity(URL, request, ConfirmSave.class);
 			}
 		}
 
@@ -134,6 +141,14 @@ public class BagTrackerServiceImpl implements BagTrackerService {
 		confirmMsg.setFrom(paxItinerary.getLoggedInAgent());
 		return confirmMsg;
 
+	}
+
+	private HttpHeaders issueSecurityTokenAndSetHeaders() {
+		String bearerToken = LoginHelper.issueBlockChainSecurityToken();
+		HttpHeaders headers = new HttpHeaders();
+		headers.add("Authorization", "Bearer " + bearerToken);
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		return headers;
 	}
 
 	@Override

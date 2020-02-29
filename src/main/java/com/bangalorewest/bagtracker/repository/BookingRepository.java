@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.bangalorewest.bagtracker.model.Booking;
 
@@ -22,6 +23,7 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
 	List<Booking> findAllByDateOfFirstSegment(Date dateOfFirstSegment);
 
 	@Modifying
+	@Transactional
 	@Query(value = "update BOOKING_INFORMATION set BAG_TAG_IDS = :bagTagIDs where EMAIL_ID=:email AND FIRST_NAME=:fname", nativeQuery = true)
 	Integer updateGeneratedBagTagsToBookings(@Param("bagTagIDs") String bagTagIDs, @Param("email") String email,
 			@Param("fname") String firstName);

@@ -27,7 +27,6 @@ import com.bangalorewest.bagtracker.exception.AuthenticationFailureException;
 import com.bangalorewest.bagtracker.exception.BagTagUpdateFailedException;
 import com.bangalorewest.bagtracker.exception.InvalidBagTagException;
 import com.bangalorewest.bagtracker.service.BagTrackerService;
-import com.bangalorewest.bagtracker.util.LoginHelper;
 
 /**
  * @author sudhanshu.singh
